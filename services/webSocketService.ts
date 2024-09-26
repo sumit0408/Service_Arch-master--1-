@@ -1,6 +1,7 @@
 import Web3 from 'web3';
 import { SERVICES } from "../constants";
 import { Server, Socket } from 'socket.io'; 
+import RabbitMQService from './rabbitmq.service';
 
 class WebSocketHelper {
     public web3: Web3;
@@ -8,13 +9,16 @@ class WebSocketHelper {
     private providerUrl: string;
     public serviceName: string = SERVICES.WEBSOCKET;
     isAsync: boolean = true;
+    private rabbitMQService: RabbitMQService; 
 
     constructor(io: Server, providerUrl: string) {
         this.io = io; 
         this.providerUrl = providerUrl;
         this.web3 = new Web3(new Web3.providers.WebsocketProvider(providerUrl));
+        this.rabbitMQService = new RabbitMQService('blockDataQueue');
         this.initializeConnection();
         this.subscribeToNewBlocks(); 
+        this.rabbitMQService.connect(); 
         console.log('WebSocket server is ready to accept the connection');
     }
 
@@ -41,6 +45,7 @@ class WebSocketHelper {
     async subscribeToNewBlocks(): Promise<void> {
         try {
             const subscription = await this.web3.eth.subscribe('newBlockHeaders');
+            
 
             subscription.on('data', async (blockHeader) => {
                 console.log('New block header received:', blockHeader);
@@ -48,11 +53,15 @@ class WebSocketHelper {
                 try {
                     const blockData = await this.web3.eth.getBlock(blockHeader.number);
                     console.log('Full block data received:', blockData);
-                    this.io.emit('newBlock', blockData);
+
+                    // await this.rabbitMQService.publish(blockData);
+
+                    // this.io.emit('newBlock', blockData);
                 } catch (blockError) {
-                    console.error('Error fetching full block data:', blockError);
+                    console.error('Error fetching full block data : ', blockError);
                 }
             });
+
             subscription.on('error', (error: any) => {
                 console.error('Error in block subscription:', error);
             });
@@ -60,7 +69,7 @@ class WebSocketHelper {
             console.error('Failed to subscribe to new block headers:', error);
         }
     }
-    
+
     run(): void {
         this.initializeConnection();
         console.log('WebSocketHelper service is running.');
