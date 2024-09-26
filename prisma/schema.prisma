@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Blocks {
+  id               Int      @id @default(autoincrement())
+  blocknumber      BigInt   @unique
+  blockhash        String   @unique @db.VarChar(255)
+  stateRoot        String   @db.VarChar(255)
+  parentHash       String   @db.VarChar(255)
+  transactionsRoot String
+  timestamp        BigInt
+  transactionCount BigInt   @default(0)
+  nonce            BigInt
+  miner            String   @db.VarChar(255)
+  baseFeePerGas    BigInt
+  receiptsRoot     String   @db.VarChar(255)
+  sha3Uncles       String   @db.VarChar(255)
+  transfer         String   @default("0")
+  deposit          String   @default("0")
+  size             BigInt
+  gasLimit         BigInt
+  gasUsed          BigInt
+  createdAt        DateTime @default(now())
+
+  @@index([blocknumber, blockhash])
+  @@index([createdAt])
+  @@index([miner]) 
+}

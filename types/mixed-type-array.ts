@@ -1,0 +1,1 @@
+export type MixedTypeArray = (string | number | object | null | undefined)[];
