@@ -54,11 +54,11 @@ class WebSocketHelper {
                     const blockData = await this.web3.eth.getBlock(blockHeader.number);
                     console.log('Full block data received:', blockData);
 
-                    // await this.rabbitMQService.publish(blockData);
+                    await this.rabbitMQService.publish(blockData);
 
-                    // this.io.emit('newBlock', blockData);
+                    this.io.emit('newBlock', blockData);
                 } catch (blockError) {
-                    console.error('Error fetching full block data : ', blockError);
+                    // console.error('Error fetching full block data : ', blockError);
                 }
             });
 

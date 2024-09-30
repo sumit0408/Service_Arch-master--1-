@@ -1,5 +1,5 @@
+import { prisma } from "../libs/database/db"; 
 import amqp, { Connection, Channel, ConsumeMessage } from 'amqplib';
-
 class RabbitMQService {
     private static instance: RabbitMQService;
     private connection: Connection | null = null;
@@ -22,7 +22,6 @@ class RabbitMQService {
             console.log('Already connected to RabbitMQ.');
             return;
         }
-
         try {
             this.connection = await amqp.connect('amqp://localhost');
             this.channel = await this.connection.createChannel();
@@ -76,41 +75,41 @@ class RabbitMQService {
             console.error('Error starting consumer for RabbitMQ:', error);
         }
     }
-
+    
     private async processMessage(msg: ConsumeMessage): Promise<void> {
         try {
             const content = JSON.parse(msg.content.toString());
 
-            // Extract only necessary fields
-            const necessaryFields = {
-                number: content.number,
-                hash: content.hash,
-                parentHash: content.parentHash,
-                nonce: content.nonce,
-                sha3_uncles: content.sha3Uncles,
-                logs_bloom: content.logsBloom,
-                transactions_root: content.transactionsRoot,
-                state_root: content.stateRoot,
-                receipts_root: content.receiptsRoot,
-                miner: content.miner,
-                difficulty: content.difficulty,
-                total_difficulty: content.totalDifficulty,
-                size: content.size,
-                extra_data: content.extraData,
-                gas_limit: content.gasLimit,
-                gas_used: content.gasUsed,
-                transaction_count: content.transactionCount || 0,
-            };
-
-            console.log('Message consumed from RabbitMQ:', necessaryFields);
-
+            await prisma.blocks.create({
+                data : {
+                    block_number: parseInt(content.number, 10),
+                    hash: content.hash,
+                    parent_hash: content.parentHash,
+                    nonce: parseInt(content.nonce, 10),
+                    sha3_uncles: content.sha3Uncles,
+                    logs_bloom: content.logsBloom,
+                    transactions_root: content.transactionsRoot,
+                    state_root: content.stateRoot,
+                    receipts_root: content.receiptsRoot,
+                    miner: content.miner,
+                    difficulty: BigInt(content.difficulty),
+                    total_difficulty: BigInt(content.totalDifficulty),
+                    size: parseInt(content.size, 10),
+                    extra_data: content.extraData,
+                    gas_limit: BigInt(content.gasLimit),
+                    gas_used: BigInt(content.gasUsed),
+                    transaction_count: content.transactionCount || 0,
+                    created_at: new Date()
+                }
+            });
+            console.log('Data stored in db', );
             this.channel?.ack(msg);
         } catch (error) {
             console.error('Error processing message:', error);
             this.channel?.nack(msg, false, false); 
         }
     }
-
+    
     async close(): Promise<void> {
         try {
             if (this.channel) {

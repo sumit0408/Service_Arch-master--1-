@@ -7,28 +7,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Blocks {
-  id               Int      @id @default(autoincrement())
-  blocknumber      BigInt   @unique
-  blockhash        String   @unique @db.VarChar(255)
-  stateRoot        String   @db.VarChar(255)
-  parentHash       String   @db.VarChar(255)
-  transactionsRoot String
-  timestamp        BigInt
-  transactionCount BigInt   @default(0)
-  nonce            BigInt
-  miner            String   @db.VarChar(255)
-  baseFeePerGas    BigInt
-  receiptsRoot     String   @db.VarChar(255)
-  sha3Uncles       String   @db.VarChar(255)
-  transfer         String   @default("0")
-  deposit          String   @default("0")
-  size             BigInt
-  gasLimit         BigInt
-  gasUsed          BigInt
-  createdAt        DateTime @default(now())
 
-  @@index([blocknumber, blockhash])
-  @@index([createdAt])
-  @@index([miner]) 
+model Blocks {
+  id                  Int       @id @default(autoincrement())
+  block_number        Int       @unique @map("block_number") // Using @map for DB compatibility
+  hash                String    @unique @db.VarChar(255)
+  parent_hash         String    @map("parent_hash") @db.VarChar(255)
+  nonce               Int
+  sha3_uncles         String    @map("sha3_uncles") @db.VarChar(255)
+  logs_bloom          String    @map("logs_bloom") @db.Text // Since it's a large string, change it to Text
+  transactions_root   String    @map("transactions_root") @db.VarChar(255)
+  state_root          String    @map("state_root") @db.VarChar(255)
+  receipts_root       String    @map("receipts_root") @db.VarChar(255)
+  miner               String    @db.VarChar(255)
+  difficulty          BigInt   
+  total_difficulty    BigInt   
+  size                Int
+  extra_data          String    @map("extra_data") @db.VarChar(255)
+  gas_limit           BigInt    @map("gas_limit") // Change to BigInt
+  gas_used            BigInt    @map("gas_used") // Change to BigInt
+  transaction_count   Int       @map("transaction_count") @default(0) // Default value
+  created_at          DateTime  @default(now()) @map("created_at") // Ensure this matches your schema
+
+  @@index([block_number, hash])
+  @@index([created_at])
+  @@index([miner])
 }
